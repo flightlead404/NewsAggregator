@@ -516,8 +516,8 @@
         <div class="header">
             <button class="back-btn" onclick="showCategories()">← Back to Categories</button>
             <button class="settings-toggle" onclick="toggleSettings()">⚙️ Settings</button>
-            <div class="version">v2.9.0</div>
-            <h1>Morning News Dashboard</h1>
+            <div class="version">v3.0.0</div>
+            <h1 id="dashboardTitle">Morning News Dashboard</h1>
             <div class="date" id="currentDate"></div>
         </div>
 
@@ -528,28 +528,43 @@
         <div class="settings-panel" id="settingsPanel">
             <div class="settings-section">
                 <h3>🎨 Appearance</h3>
-                <p style="color: #666; margin-bottom: 15px;">Customize the look of your dashboard:</p>
+                <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 15px; font-size: 0.95rem;">Customize the look of your dashboard:</p>
                 <div style="display: grid; gap: 15px;">
                     <div>
-                        <label style="display: block; color: #333; margin-bottom: 5px; font-weight: 500;">
+                        <label style="display: block; color: white; margin-bottom: 8px; font-weight: 500; font-size: 1rem;">
+                            Dashboard Title
+                        </label>
+                        <input 
+                            type="text" 
+                            id="dashboardTitleInput" 
+                            placeholder="Morning News Dashboard"
+                            value="Morning News Dashboard"
+                            style="width: 100%; padding: 10px 12px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; font-size: 0.95rem; background: rgba(255, 255, 255, 0.1); color: white; backdrop-filter: blur(10px);"
+                            oninput="updateDashboardTitle(this.value)">
+                        <p style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem; margin-top: 8px; line-height: 1.4;">
+                            Customize the main title shown at the top of your dashboard
+                        </p>
+                    </div>
+                    <div>
+                        <label style="display: block; color: white; margin-bottom: 8px; font-weight: 500; font-size: 1rem;">
                             Background Image
                         </label>
                         <input 
                             type="file" 
                             id="backgroundImage" 
                             accept="image/*"
-                            style="display: block; margin-bottom: 10px; padding: 5px; border: 1px solid #ddd; border-radius: 6px; width: 100%;"
+                            style="display: block; margin-bottom: 10px; padding: 8px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; width: 100%; background: rgba(255, 255, 255, 0.1); color: white; font-size: 0.9rem;"
                             onchange="handleBackgroundImage(this)">
                         <button 
                             class="add-btn" 
                             onclick="clearBackgroundImage()" 
-                            style="background: #999; padding: 6px 12px; font-size: 0.85rem;">
+                            style="background: #999; padding: 8px 16px; font-size: 0.9rem;">
                             Clear Background
                         </button>
                     </div>
                     <div>
-                        <label style="display: block; color: #333; margin-bottom: 5px; font-weight: 500;">
-                            Card/Button opacity: <span id="cardOpacityValue" style="color: #667eea;">20%</span>
+                        <label style="display: block; color: white; margin-bottom: 8px; font-weight: 500; font-size: 1rem;">
+                            Card/Button opacity: <span id="cardOpacityValue" style="color: rgba(255, 255, 255, 0.9);">20%</span>
                         </label>
                         <input 
                             type="range" 
@@ -560,18 +575,18 @@
                             value="20" 
                             style="width: 100%;"
                             oninput="updateCardOpacity(this.value)">
-                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #999; margin-top: 2px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); margin-top: 5px;">
                             <span>Very Transparent</span>
                             <span>Balanced</span>
                             <span>More Solid</span>
                         </div>
-                        <p style="color: #999; font-size: 0.8rem; margin-top: 5px;">
+                        <p style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem; margin-top: 8px; line-height: 1.4;">
                             Adjust transparency of all cards, buttons, and panels
                         </p>
                     </div>
                     <div>
-                        <label style="display: block; color: #333; margin-bottom: 5px; font-weight: 500;">
-                            Background overlay opacity: <span id="backgroundOpacityValue" style="color: #667eea;">30%</span>
+                        <label style="display: block; color: white; margin-bottom: 8px; font-weight: 500; font-size: 1rem;">
+                            Background overlay opacity: <span id="backgroundOpacityValue" style="color: rgba(255, 255, 255, 0.9);">30%</span>
                         </label>
                         <input 
                             type="range" 
@@ -582,12 +597,12 @@
                             value="30" 
                             style="width: 100%;"
                             oninput="updateBackgroundOpacity(this.value)">
-                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #999; margin-top: 2px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); margin-top: 5px;">
                             <span>Transparent</span>
                             <span>50%</span>
                             <span>Opaque</span>
                         </div>
-                        <p style="color: #999; font-size: 0.8rem; margin-top: 5px;">
+                        <p style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem; margin-top: 8px; line-height: 1.4;">
                             Lower values show more of your image, higher values improve text readability
                         </p>
                     </div>
@@ -719,7 +734,7 @@
 
     <script>
         // Configuration version for tracking updates
-        const CONFIG_VERSION = '2.9.0'; // Added card opacity control
+        const CONFIG_VERSION = '3.0.0'; // Added customizable dashboard title
         
         // Store category order
         let categoryOrder = [];
@@ -887,7 +902,8 @@
             autoRefreshMinutes: 15,
             backgroundImage: '',
             backgroundOpacity: 0.3,
-            cardOpacity: 0.2
+            cardOpacity: 0.2,
+            dashboardTitle: 'Morning News Dashboard'
         };
         
         // Auto-refresh timer
@@ -898,9 +914,10 @@
             loadConfiguration();
             updateDate();
             
-            // Apply saved background and card styles
+            // Apply saved background, card styles, and title
             applyBackground();
             applyCardOpacity();
+            applyDashboardTitle();
             
             // Load cached stories first for instant display
             loadCachedStories();
@@ -1461,12 +1478,19 @@
             applyCardOpacity();
         }
 
+        function updateDashboardTitle(value) {
+            userPreferences.dashboardTitle = value || 'Morning News Dashboard';
+            saveConfiguration();
+            applyDashboardTitle();
+        }
+
         function updatePreferenceSliders() {
             const storiesPerCategorySlider = document.getElementById('storiesPerCategory');
             const storiesPerFeedSlider = document.getElementById('storiesPerFeed');
             const autoRefreshSlider = document.getElementById('autoRefreshMinutes');
             const backgroundOpacitySlider = document.getElementById('backgroundOpacity');
             const cardOpacitySlider = document.getElementById('cardOpacity');
+            const dashboardTitleInput = document.getElementById('dashboardTitleInput');
             
             if (storiesPerCategorySlider) {
                 storiesPerCategorySlider.value = userPreferences.storiesPerCategory;
@@ -1493,6 +1517,18 @@
                 const cardOpacityPercent = Math.round(userPreferences.cardOpacity * 100);
                 cardOpacitySlider.value = cardOpacityPercent;
                 document.getElementById('cardOpacityValue').textContent = `${cardOpacityPercent}%`;
+            }
+            
+            if (dashboardTitleInput) {
+                dashboardTitleInput.value = userPreferences.dashboardTitle;
+            }
+        }
+
+        // Apply dashboard title
+        function applyDashboardTitle() {
+            const titleElement = document.getElementById('dashboardTitle');
+            if (titleElement) {
+                titleElement.textContent = userPreferences.dashboardTitle || 'Morning News Dashboard';
             }
         }
 
