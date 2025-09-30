@@ -1,0 +1,2151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morning News Dashboard</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📰</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+
+        .header .date {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .version {
+            position: absolute;
+            top: 0;
+            right: 0;
+            font-size: 0.75rem;
+            opacity: 0.7;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .settings-toggle {
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-size: 0.8rem;
+            opacity: 0.8;
+            color: rgba(255, 255, 255, 0.8);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .settings-toggle:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .back-btn.visible {
+            display: inline-block;
+        }
+
+        /* Category Grid */
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .category-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .category-card.dragging {
+            opacity: 0.9;
+            transform: scale(1.05) translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            cursor: grabbing;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+
+        .category-card.drag-over {
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .category-card:hover {
+            cursor: grab;
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .category-card:hover::after {
+            content: '⋮⋮';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: rgba(102, 126, 234, 0.6);
+            font-size: 1rem;
+            font-weight: bold;
+            line-height: 0.8;
+        }
+
+        .category-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .category-card:hover::before {
+            left: 100%;
+        }
+
+        .category-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .category-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .category-card h3 {
+            color: #fff;
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .category-card p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95rem;
+            line-height: 1.4;
+            text-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+        }
+
+        .category-card .story-count {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            border-radius: 12px;
+            padding: 4px 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Stories View */
+        .stories-container {
+            display: none;
+        }
+
+        .stories-container.active {
+            display: block;
+        }
+
+        .category-header {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .category-header h2 {
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .category-header .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1rem;
+            text-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .stories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .story-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-left: 4px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .story-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.3);
+            border-left-color: rgba(255, 255, 255, 0.7);
+        }
+
+        .story-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .story-source {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .story-time {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.85rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .story-title {
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            line-height: 1.3;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .story-excerpt {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin-bottom: 12px;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .story-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .story-tag {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        .control-btn.loading {
+            background: rgba(255, 255, 255, 0.4);
+            cursor: not-allowed;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .refresh-indicator {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .settings-panel {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: none;
+        }
+
+        .settings-panel.active {
+            display: block;
+        }
+
+        .settings-panel h3 {
+            color: white;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .settings-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .settings-section:last-child {
+            border-bottom: none;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .input-row input, .input-row select {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .input-row input[type="text"]:nth-child(1) {
+            flex: 0.8;
+        }
+
+        .input-row input[type="text"]:nth-child(2) {
+            flex: 0.6;
+        }
+
+        .add-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .add-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .config-list {
+            margin-top: 10px;
+        }
+
+        .config-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .config-item:last-child {
+            border-bottom: none;
+        }
+
+        .remove-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .remove-btn:hover {
+            background: #ff5252;
+        }
+
+        .category-preview {
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .categories-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stories-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .categories-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .stories-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="showCategories()">← Back to Categories</button>
+            <button class="settings-toggle" onclick="toggleSettings()">⚙️ Settings</button>
+            <div class="version">v3.0.0</div>
+            <h1 id="dashboardTitle">Morning News Dashboard</h1>
+            <div class="date" id="currentDate"></div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" onclick="refreshStories()">🔄 Refresh Stories</button>
+        </div>
+
+        <div class="settings-panel" id="settingsPanel">
+            <div class="settings-section">
+                <h3>🎨 Appearance</h3>
+                <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 15px; font-size: 0.95rem;">Customize the look of your dashboard:</p>
+                <div style="display: grid; gap: 15px;">
+                    <div>
+                        <label style="display: block; color: white; margin-bottom: 8px; font-weight: 500; font-size: 1rem;">
+                            Dashboard Title
+                        </label>
+                        <input 
+                            type="text" 
+                            id="dashboardTitleInput" 
+                            placeholder="Morning News Dashboard"
+                            value="Morning News Dashboard"
+                            style="width: 100%; padding: 10px 12px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; font-size: 0.95rem; background: rgba(255, 255, 255, 0.1); color: white; backdrop-filter: blur(10px);"
+                            oninput="updateDashboardTitle(this.value)">
+                        <p style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem; margin-top: 8px; line-height: 1.4;">
+                            Customize the main title shown at the top of your dashboard
+                        </p>
+                    </div>
+                    <div>
+                        <label style="display: block; color: white; margin-bottom: 8px; font-weight: 500; font-size: 1rem;">
+                            Background Image
+                        </label>
+                        <input 
+                            type="file" 
+                            id="backgroundImage" 
+                            accept="image/*"
+                            style="display: block; margin-bottom: 10px; padding: 8px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; width: 100%; background: rgba(255, 255, 255, 0.1); color: white; font-size: 0.9rem;"
+                            onchange="handleBackgroundImage(this)">
+                        <button 
+                            class="add-btn" 
+                            onclick="clearBackgroundImage()" 
+                            style="background: #999; padding: 8px 16px; font-size: 0.9rem;">
+                            Clear Background
+                        </button>
+                    </div>
+                    <div>
+                        <label style="display: block; color: white; margin-bottom: 8px; font-weight: 500; font-size: 1rem;">
+                            Card/Button opacity: <span id="cardOpacityValue" style="color: rgba(255, 255, 255, 0.9);">20%</span>
+                        </label>
+                        <input 
+                            type="range" 
+                            id="cardOpacity" 
+                            min="5" 
+                            max="50" 
+                            step="5"
+                            value="20" 
+                            style="width: 100%;"
+                            oninput="updateCardOpacity(this.value)">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); margin-top: 5px;">
+                            <span>Very Transparent</span>
+                            <span>Balanced</span>
+                            <span>More Solid</span>
+                        </div>
+                        <p style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem; margin-top: 8px; line-height: 1.4;">
+                            Adjust transparency of all cards, buttons, and panels
+                        </p>
+                    </div>
+                    <div>
+                        <label style="display: block; color: white; margin-bottom: 8px; font-weight: 500; font-size: 1rem;">
+                            Background overlay opacity: <span id="backgroundOpacityValue" style="color: rgba(255, 255, 255, 0.9);">30%</span>
+                        </label>
+                        <input 
+                            type="range" 
+                            id="backgroundOpacity" 
+                            min="0" 
+                            max="100" 
+                            step="5"
+                            value="30" 
+                            style="width: 100%;"
+                            oninput="updateBackgroundOpacity(this.value)">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); margin-top: 5px;">
+                            <span>Transparent</span>
+                            <span>50%</span>
+                            <span>Opaque</span>
+                        </div>
+                        <p style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem; margin-top: 8px; line-height: 1.4;">
+                            Lower values show more of your image, higher values improve text readability
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>⚙️ Display Preferences</h3>
+                <p style="color: #666; margin-bottom: 15px;">Customize how stories are displayed:</p>
+                <div style="display: grid; gap: 15px;">
+                    <div>
+                        <label style="display: block; color: #333; margin-bottom: 5px; font-weight: 500;">
+                            Stories per category: <span id="storiesPerCategoryValue" style="color: #667eea;">10</span>
+                        </label>
+                        <input 
+                            type="range" 
+                            id="storiesPerCategory" 
+                            min="5" 
+                            max="50" 
+                            value="10" 
+                            style="width: 100%;"
+                            oninput="updateStoriesPerCategory(this.value)">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #999; margin-top: 2px;">
+                            <span>5</span>
+                            <span>25</span>
+                            <span>50</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display: block; color: #333; margin-bottom: 5px; font-weight: 500;">
+                            Stories per RSS feed: <span id="storiesPerFeedValue" style="color: #667eea;">10</span>
+                        </label>
+                        <input 
+                            type="range" 
+                            id="storiesPerFeed" 
+                            min="5" 
+                            max="25" 
+                            value="10" 
+                            style="width: 100%;"
+                            oninput="updateStoriesPerFeed(this.value)">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #999; margin-top: 2px;">
+                            <span>5</span>
+                            <span>15</span>
+                            <span>25</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display: block; color: #333; margin-bottom: 5px; font-weight: 500;">
+                            Auto-refresh interval: <span id="autoRefreshValue" style="color: #667eea;">15 minutes</span>
+                        </label>
+                        <input 
+                            type="range" 
+                            id="autoRefreshMinutes" 
+                            min="5" 
+                            max="60" 
+                            step="5"
+                            value="15" 
+                            style="width: 100%;"
+                            oninput="updateAutoRefresh(this.value)">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #999; margin-top: 2px;">
+                            <span>5 min</span>
+                            <span>30 min</span>
+                            <span>60 min</span>
+                        </div>
+                    </div>
+                </div>
+                <p style="color: #999; font-size: 0.85rem; margin-top: 10px;">
+                    💡 Higher values show more content but may slow down loading. Stories refresh automatically in background.
+                </p>
+            </div>
+
+            <div class="settings-section">
+                <h3>🚀 Quick Setup</h3>
+                <p style="color: #666; margin-bottom: 15px;">Add curated, high-quality news sources instantly:</p>
+                <button class="add-btn" onclick="addRecommendedSources()" style="margin-bottom: 15px; padding: 10px 20px;">
+                    📰 Add Recommended Sources
+                </button>
+                <div id="quickSetupStatus"></div>
+            </div>
+
+            <div class="settings-section">
+                <h3>📁 Manage Categories</h3>
+                <p style="color: #666; margin-bottom: 15px;">Create and manage your news categories:</p>
+                <div class="input-row">
+                    <input type="text" id="categoryName" placeholder="Category name (e.g., Breaking News)">
+                    <input type="text" id="categoryIcon" placeholder="Icon (emoji)" maxlength="2">
+                    <input type="text" id="categoryDescription" placeholder="Description">
+                    <button class="add-btn" onclick="addCategory()">Add Category</button>
+                </div>
+                <div class="config-list" id="categoriesList"></div>
+            </div>
+
+            <div class="settings-section">
+                <h3>📰 Manage News Sources</h3>
+                <p style="color: #666; margin-bottom: 15px;">Add RSS feeds or news websites to your categories:</p>
+                <div class="input-row">
+                    <input type="text" id="sourceName" placeholder="Source name (e.g., BBC News)">
+                    <input type="text" id="sourceUrl" placeholder="RSS feed or website URL">
+                    <select id="sourceCategory">
+                        <option value="">Select category...</option>
+                    </select>
+                    <button class="add-btn" onclick="addNewsSource()">Add Source</button>
+                </div>
+                <div class="config-list" id="sourcesList"></div>
+            </div>
+        </div>
+
+        <!-- Categories View -->
+        <div id="categoriesView">
+            <div class="categories-grid" id="categoriesGrid">
+                <!-- Categories will be loaded dynamically -->
+            </div>
+        </div>
+
+        <!-- Stories View -->
+        <div class="stories-container" id="storiesContainer">
+            <div class="category-header">
+                <h2 id="categoryTitle">
+                    <span id="categoryIcon"></span>
+                    <span id="categoryName"></span>
+                </h2>
+                <div class="subtitle" id="categorySubtitle"></div>
+            </div>
+            <div class="stories-grid" id="storiesGrid">
+                <!-- Stories will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration version for tracking updates
+        const CONFIG_VERSION = '3.0.0'; // Added customizable dashboard title
+        
+        // Store category order
+        let categoryOrder = [];
+
+        // Smart categorization rules
+        const categorizationRules = {
+            breaking: {
+                sources: ['Reuters', 'AP News', 'BBC Breaking', 'CNN Breaking'],
+                keywords: ['breaking', 'urgent', 'alert', 'developing', 'just in', 'live updates'],
+                priority: 1 // Highest priority for breaking news
+            },
+            uspolitics: {
+                sources: ['Politico', 'The Hill', 'NPR Politics', 'Roll Call', 'Axios Politics'],
+                keywords: ['congress', 'senate', 'house', 'biden', 'trump', 'election', 'vote', 'politics', 'washington', 'white house', 'supreme court'],
+                priority: 2
+            },
+            worldpolitics: {
+                sources: ['Reuters World', 'BBC World', 'Foreign Affairs', 'Al Jazeera'],
+                keywords: ['international', 'global', 'foreign', 'embassy', 'diplomatic', 'UN', 'NATO', 'EU', 'china', 'russia', 'ukraine', 'middle east'],
+                priority: 3
+            },
+            financial: {
+                sources: ['Bloomberg', 'MarketWatch', 'Financial Times', 'Wall Street Journal', 'Yahoo Finance', 'Seeking Alpha'],
+                keywords: ['stock', 'market', 'trading', 'investment', 'portfolio', 'earnings', 'revenue', 'IPO', 'nasdaq', 'dow jones', 's&p 500', 'fed', 'interest rate', 'inflation'],
+                priority: 4
+            },
+            cybersecurity: {
+                sources: ['Krebs on Security', 'Dark Reading', 'SecurityWeek', 'Threatpost', 'The Hacker News', 'Cybersecurity Dive'],
+                keywords: ['breach', 'malware', 'ransomware', 'vulnerability', 'cyber', 'hacker', 'phishing', 'security', 'exploit', 'zero-day', 'data leak', 'CISO', 'firewall'],
+                priority: 5
+            },
+            cryptocurrency: {
+                sources: ['CoinDesk', 'The Block', 'Decrypt', 'CoinTelegraph', 'Bitcoin Magazine'],
+                keywords: ['bitcoin', 'ethereum', 'crypto', 'cryptocurrency', 'blockchain', 'NFT', 'DeFi', 'mining', 'wallet', 'exchange', 'altcoin', 'dogecoin', 'solana'],
+                priority: 6
+            },
+            ai: {
+                sources: ['MIT Technology Review', 'AI News', 'VentureBeat AI', 'The Verge AI', 'Ars Technica AI'],
+                keywords: ['artificial intelligence', 'machine learning', 'AI', 'neural network', 'deep learning', 'GPT', 'OpenAI', 'ChatGPT', 'Claude', 'algorithm', 'automation', 'robot'],
+                priority: 7
+            },
+            positive: {
+                sources: ['Good News Network', 'Positive News', 'HuffPost Good News', 'Upworthy', 'Some Good News'],
+                keywords: ['heartwarming', 'inspiring', 'uplifting', 'positive', 'hero', 'rescue', 'community', 'kindness', 'hope', 'miracle', 'wholesome', 'feel good', 'amazing'],
+                priority: 8
+            }
+        }; // Bumped version to force update
+        
+        // Default categories (loaded first time only)
+        const defaultCategories = {
+            breaking: { name: 'Breaking News', icon: '🚨', description: 'Latest breaking news and urgent updates from around the world' },
+            uspolitics: { name: 'US Politics', icon: '🇺🇸', description: 'American government, elections, policy changes and domestic political developments' },
+            worldpolitics: { name: 'World Events and Politics', icon: '🌍', description: 'International politics, global events, foreign affairs and world developments' },
+            financial: { name: 'Financial and Investing', icon: '💰', description: 'Markets, investing strategies, economic analysis and financial news' },
+            cybersecurity: { name: 'Cyber Security News', icon: '🔐', description: 'Information security threats, data breaches, cybersecurity tools and industry developments' },
+            positive: { name: 'Funny and Heartwarming', icon: '😊', description: 'Uplifting stories, humor, positive news and feel-good content to brighten your day' },
+            cryptocurrency: { name: 'Cryptocurrency', icon: '₿', description: 'Bitcoin, altcoins, blockchain technology, crypto markets and digital asset news' },
+            ai: { name: 'AI', icon: '🤖', description: 'Artificial intelligence breakthroughs, machine learning, AI tools and industry developments' }
+        };
+
+        // Sample news data structure (in real implementation, this would come from RSS feeds/APIs)
+        const sampleStories = {
+            breaking: [
+                {
+                    title: "Major Economic Policy Announced",
+                    excerpt: "Government unveils new economic stimulus package targeting inflation concerns...",
+                    source: "Reuters",
+                    time: "2 hours ago",
+                    url: "https://reuters.com/sample1",
+                    tags: ["Economy", "Policy"]
+                },
+                {
+                    title: "International Summit Concludes",
+                    excerpt: "World leaders reach agreement on climate action initiatives...",
+                    source: "AP News",
+                    time: "4 hours ago",
+                    url: "https://apnews.com/sample1",
+                    tags: ["International", "Climate"]
+                }
+            ],
+            cybersecurity: [
+                {
+                    title: "Major Data Breach Affects Millions",
+                    excerpt: "Healthcare company reports unauthorized access to patient records affecting 2.3 million users...",
+                    source: "Krebs on Security",
+                    time: "1 hour ago",
+                    url: "https://krebsonsecurity.com/sample1",
+                    tags: ["Data Breach", "Healthcare"]
+                },
+                {
+                    title: "New Zero-Day Vulnerability Discovered",
+                    excerpt: "Security researchers identify critical flaw in popular enterprise software...",
+                    source: "Dark Reading",
+                    time: "3 hours ago",
+                    url: "https://darkreading.com/sample1",
+                    tags: ["Zero-Day", "Enterprise Security"]
+                }
+            ],
+            financial: [
+                {
+                    title: "Fed Signals Interest Rate Changes",
+                    excerpt: "Federal Reserve hints at policy shifts amid economic uncertainty...",
+                    source: "Bloomberg",
+                    time: "30 minutes ago",
+                    url: "https://bloomberg.com/sample1",
+                    tags: ["Fed Policy", "Interest Rates"]
+                }
+            ],
+            positive: [
+                {
+                    title: "Community Rallies to Save Local Library",
+                    excerpt: "Small town residents raise $50,000 in one week to keep beloved library open...",
+                    source: "Good News Network",
+                    time: "2 hours ago",
+                    url: "https://goodnewsnetwork.org/sample1",
+                    tags: ["Community", "Libraries"]
+                }
+            ],
+            cryptocurrency: [
+                {
+                    title: "Bitcoin Reaches New All-Time High",
+                    excerpt: "Leading cryptocurrency surpasses previous record amid institutional adoption...",
+                    source: "CoinDesk",
+                    time: "1 hour ago",
+                    url: "https://coindesk.com/sample1",
+                    tags: ["Bitcoin", "Markets"]
+                },
+                {
+                    title: "Major Bank Launches Crypto Trading",
+                    excerpt: "Traditional financial institution announces cryptocurrency services for clients...",
+                    source: "The Block",
+                    time: "4 hours ago",
+                    url: "https://theblock.co/sample1",
+                    tags: ["Banking", "Adoption"]
+                }
+            ],
+            ai: [
+                {
+                    title: "OpenAI Announces New Model Architecture",
+                    excerpt: "Latest AI system shows significant improvements in reasoning and efficiency...",
+                    source: "TechCrunch",
+                    time: "2 hours ago",
+                    url: "https://techcrunch.com/sample1",
+                    tags: ["OpenAI", "Machine Learning"]
+                },
+                {
+                    title: "AI Tool Revolutionizes Drug Discovery",
+                    excerpt: "Machine learning platform identifies potential treatments 10x faster than traditional methods...",
+                    source: "MIT Technology Review",
+                    time: "5 hours ago",
+                    url: "https://technologyreview.com/sample1",
+                    tags: ["Healthcare", "Research"]
+                }
+            ]
+        };
+
+        let currentCategory = null;
+        let categories = {};
+        let newsSources = {};
+        
+        // User preferences
+        let userPreferences = {
+            storiesPerCategory: 10,
+            storiesPerFeed: 10,
+            autoRefreshMinutes: 15,
+            backgroundImage: '',
+            backgroundOpacity: 0.3,
+            cardOpacity: 0.2,
+            dashboardTitle: 'Morning News Dashboard'
+        };
+        
+        // Auto-refresh timer
+        let autoRefreshTimer = null;
+
+        // Initialize page
+        function init() {
+            loadConfiguration();
+            updateDate();
+            
+            // Apply saved background, card styles, and title
+            applyBackground();
+            applyCardOpacity();
+            applyDashboardTitle();
+            
+            // Load cached stories first for instant display
+            loadCachedStories();
+            
+            renderCategories();
+            updateStoryCounts();
+            
+            // Then fetch fresh stories in background
+            setTimeout(() => {
+                refreshStories(true); // Silent refresh on load
+            }, 1000);
+            
+            // Set up auto-refresh
+            setupAutoRefresh();
+            
+            // Update date every hour
+            setInterval(updateDate, 3600000);
+        }
+
+        // Load configuration from localStorage
+        function loadConfiguration() {
+            const savedVersion = localStorage.getItem('newsConfigVersion');
+            const savedCategories = localStorage.getItem('newsCategories');
+            const savedSources = localStorage.getItem('newsSources');
+            const savedOrder = localStorage.getItem('categoryOrder');
+            const savedPreferences = localStorage.getItem('userPreferences');
+            
+            // Check if we need to update configuration
+            if (savedVersion !== CONFIG_VERSION) {
+                handleConfigurationUpdate(savedVersion, savedCategories, savedSources);
+            } else {
+                // Load existing configuration
+                categories = savedCategories ? JSON.parse(savedCategories) : { ...defaultCategories };
+                newsSources = savedSources ? JSON.parse(savedSources) : {};
+            }
+
+            // Load category order
+            categoryOrder = savedOrder ? JSON.parse(savedOrder) : Object.keys(categories);
+            
+            // Ensure all categories are in the order array
+            Object.keys(categories).forEach(id => {
+                if (!categoryOrder.includes(id)) {
+                    categoryOrder.push(id);
+                }
+            });
+            
+            // Load user preferences
+            if (savedPreferences) {
+                userPreferences = { ...userPreferences, ...JSON.parse(savedPreferences) };
+            }
+            
+            // Update UI sliders
+            updatePreferenceSliders();
+        }
+
+        // Handle configuration updates intelligently
+        function handleConfigurationUpdate(oldVersion, savedCategories, savedSources) {
+            let existingCategories = savedCategories ? JSON.parse(savedCategories) : {};
+            let existingSources = savedSources ? JSON.parse(savedSources) : {};
+            
+            // For first-time users (no saved version)
+            if (!oldVersion) {
+                categories = { ...defaultCategories };
+                newsSources = existingSources;
+                saveConfiguration();
+                showUpdateNotification('Welcome! Your news aggregator is ready with default categories.');
+                return;
+            }
+            
+            // For existing users, merge intelligently
+            categories = { ...existingCategories };
+            newsSources = existingSources;
+            
+            // Add any new default categories that don't exist
+            let newCategoriesAdded = [];
+            Object.entries(defaultCategories).forEach(([id, defaultCategory]) => {
+                if (!categories[id]) {
+                    categories[id] = { ...defaultCategory };
+                    newCategoriesAdded.push(defaultCategory.name);
+                }
+            });
+            
+            saveConfiguration();
+            
+            // Notify user of updates
+            if (newCategoriesAdded.length > 0) {
+                showUpdateNotification(`Update: Added ${newCategoriesAdded.length} new categories: ${newCategoriesAdded.join(', ')}`);
+            } else {
+                showUpdateNotification(`Updated to version ${CONFIG_VERSION}`);
+            }
+        }
+
+        // Show update notification
+        function showUpdateNotification(message) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(102, 126, 234, 0.95);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+                z-index: 10000;
+                max-width: 300px;
+                font-size: 0.9rem;
+                backdrop-filter: blur(10px);
+            `;
+            notification.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>${message}</div>
+                    <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; padding: 0; margin-left: 10px;">×</button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 8 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 8000);
+        }
+
+        // Save configuration to localStorage
+        function saveConfiguration() {
+            localStorage.setItem('newsConfigVersion', CONFIG_VERSION);
+            localStorage.setItem('newsCategories', JSON.stringify(categories));
+            localStorage.setItem('newsSources', JSON.stringify(newsSources));
+            localStorage.setItem('categoryOrder', JSON.stringify(categoryOrder));
+            localStorage.setItem('userPreferences', JSON.stringify(userPreferences));
+        }
+
+        // Generate unique category ID
+        function generateCategoryId(name) {
+            return name.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20);
+        }
+
+        // Render categories grid
+        function renderCategories() {
+            const grid = document.getElementById('categoriesGrid');
+            grid.innerHTML = '';
+
+            // Render in saved order
+            categoryOrder.forEach(id => {
+                if (categories[id]) {
+                    const category = categories[id];
+                    const storyCount = sampleStories[id]?.length || 0;
+                    
+                    const categoryCard = document.createElement('div');
+                    categoryCard.className = 'category-card';
+                    categoryCard.draggable = true;
+                    categoryCard.dataset.categoryId = id;
+                    categoryCard.onclick = (e) => {
+                        if (!e.target.closest('.drag-handle')) {
+                            showCategory(id);
+                        }
+                    };
+                    
+                    // Add drag event listeners
+                    categoryCard.addEventListener('dragstart', handleDragStart);
+                    categoryCard.addEventListener('dragend', handleDragEnd);
+                    categoryCard.addEventListener('dragover', handleDragOver);
+                    categoryCard.addEventListener('drop', handleDrop);
+                    categoryCard.addEventListener('dragenter', handleDragEnter);
+                    categoryCard.addEventListener('dragleave', handleDragLeave);
+                    
+                    categoryCard.innerHTML = `
+                        <div class="category-icon">${category.icon}</div>
+                        <div class="story-count">${storyCount}</div>
+                        <h3>${category.name}</h3>
+                        <p>${category.description}</p>
+                    `;
+                    
+                    grid.appendChild(categoryCard);
+                }
+            });
+
+            // Update category dropdown in settings
+            updateCategoryDropdown();
+        }
+
+        // Update category dropdown in settings panel
+        function updateCategoryDropdown() {
+            const dropdown = document.getElementById('sourceCategory');
+            dropdown.innerHTML = '<option value="">Select category...</option>';
+            
+            Object.entries(categories).forEach(([id, category]) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = category.name;
+                dropdown.appendChild(option);
+            });
+        }
+
+        // Add new category
+        function addCategory() {
+            const name = document.getElementById('categoryName').value.trim();
+            const icon = document.getElementById('categoryIcon').value.trim();
+            const description = document.getElementById('categoryDescription').value.trim();
+            
+            if (!name) {
+                alert('Please enter a category name');
+                return;
+            }
+            
+            if (!icon) {
+                alert('Please enter an icon (emoji)');
+                return;
+            }
+            
+            if (!description) {
+                alert('Please enter a description');
+                return;
+            }
+            
+            const id = generateCategoryId(name);
+            
+            if (categories[id]) {
+                alert('A category with this name already exists');
+                return;
+            }
+            
+            categories[id] = { name, icon, description };
+            saveConfiguration();
+            
+            // Clear form
+            document.getElementById('categoryName').value = '';
+            document.getElementById('categoryIcon').value = '';
+            document.getElementById('categoryDescription').value = '';
+            
+            renderCategories();
+            loadCategoriesList();
+            alert(`Category "${name}" added successfully`);
+        }
+
+        // Remove category
+        function removeCategory(id) {
+            if (confirm(`Remove category "${categories[id].name}"? This will also remove all sources in this category.`)) {
+                delete categories[id];
+                delete newsSources[id];
+                saveConfiguration();
+                renderCategories();
+                loadCategoriesList();
+                loadSourcesList();
+            }
+        }
+
+        // Load categories list in settings
+        function loadCategoriesList() {
+            const categoriesList = document.getElementById('categoriesList');
+            categoriesList.innerHTML = '';
+            
+            Object.entries(categories).forEach(([id, category]) => {
+                const item = document.createElement('div');
+                item.className = 'config-item';
+                item.innerHTML = `
+                    <div>
+                        <span class="category-preview">${category.icon}</span>
+                        <strong>${category.name}</strong> - ${category.description}
+                    </div>
+                    <button class="remove-btn" onclick="removeCategory('${id}')">Remove</button>
+                `;
+                categoriesList.appendChild(item);
+            });
+        }
+
+        // Update current date
+        function updateDate() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        // Show category stories
+        function showCategory(categoryId) {
+            currentCategory = categoryId;
+            
+            // Update UI
+            document.getElementById('categoriesView').style.display = 'none';
+            document.getElementById('storiesContainer').classList.add('active');
+            document.querySelector('.back-btn').classList.add('visible');
+            
+            // Set category info
+            const category = categories[categoryId];
+            if (category) {
+                document.getElementById('categoryIcon').textContent = category.icon;
+                document.getElementById('categoryName').textContent = category.name;
+                document.getElementById('categorySubtitle').textContent = category.description;
+            }
+            
+            // Load stories
+            loadStories(categoryId);
+        }
+
+        // Show categories view
+        function showCategories() {
+            document.getElementById('categoriesView').style.display = 'block';
+            document.getElementById('storiesContainer').classList.remove('active');
+            document.querySelector('.back-btn').classList.remove('visible');
+            document.getElementById('settingsPanel').classList.remove('active');
+            currentCategory = null;
+        }
+
+        // Load stories for category
+        function loadStories(categoryId) {
+            const storiesGrid = document.getElementById('storiesGrid');
+            const stories = sampleStories[categoryId] || [];
+            
+            storiesGrid.innerHTML = '';
+            
+            if (stories.length === 0) {
+                storiesGrid.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666;">
+                        <p>No stories available in this category yet.</p>
+                        <p style="margin-top: 10px; font-size: 0.9rem;">Configure news sources to see stories here.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            stories.forEach(story => {
+                const storyElement = document.createElement('div');
+                storyElement.className = 'story-card';
+                storyElement.onclick = () => window.open(story.url, '_blank');
+                
+                storyElement.innerHTML = `
+                    <div class="story-header">
+                        <div class="story-source">${story.source}</div>
+                        <div class="story-time">${story.time}</div>
+                    </div>
+                    <div class="story-title">${story.title}</div>
+                    <div class="story-excerpt">${story.excerpt}</div>
+                    <div class="story-tags">
+                        ${story.tags.map(tag => `<span class="story-tag">${tag}</span>`).join('')}
+                    </div>
+                `;
+                
+                storiesGrid.appendChild(storyElement);
+            });
+        }
+
+        // Update story counts
+        function updateStoryCounts() {
+            Object.keys(categories).forEach(categoryId => {
+                const count = sampleStories[categoryId]?.length || 0;
+                // Story counts are now handled in renderCategories()
+            });
+        }
+
+        // Toggle settings panel
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('active');
+            
+            if (panel.classList.contains('active')) {
+                loadCategoriesList();
+                loadSourcesList();
+                updatePreferenceSliders(); // Ensure sliders are updated when opening
+            }
+        }
+
+        // Add news source
+        function addNewsSource() {
+            const name = document.getElementById('sourceName').value.trim();
+            const url = document.getElementById('sourceUrl').value.trim();
+            const categoryId = document.getElementById('sourceCategory').value;
+            
+            if (!name || !url) {
+                alert('Please enter both source name and URL');
+                return;
+            }
+            
+            if (!categoryId) {
+                alert('Please select a category');
+                return;
+            }
+            
+            if (!newsSources[categoryId]) {
+                newsSources[categoryId] = [];
+            }
+            
+            newsSources[categoryId].push({ name, url });
+            saveConfiguration();
+            
+            // Clear form
+            document.getElementById('sourceName').value = '';
+            document.getElementById('sourceUrl').value = '';
+            document.getElementById('sourceCategory').value = '';
+            
+            loadSourcesList();
+            alert(`${name} added to ${categories[categoryId].name} category`);
+        }
+
+        // Load sources list
+        function loadSourcesList() {
+            const sourcesList = document.getElementById('sourcesList');
+            sourcesList.innerHTML = '';
+            
+            Object.entries(newsSources).forEach(([categoryId, sources]) => {
+                if (sources.length > 0 && categories[categoryId]) {
+                    const categoryHeader = document.createElement('h4');
+                    categoryHeader.style.cssText = 'margin-top: 15px; color: #333; margin-bottom: 8px;';
+                    categoryHeader.textContent = `${categories[categoryId].icon} ${categories[categoryId].name}`;
+                    sourcesList.appendChild(categoryHeader);
+                    
+                    sources.forEach((source, index) => {
+                        const item = document.createElement('div');
+                        item.className = 'config-item';
+                        item.innerHTML = `
+                            <div>
+                                <strong>${source.name}</strong><br>
+                                <small style="color: #666;">${source.url}</small>
+                            </div>
+                            <button class="remove-btn" onclick="removeSource('${categoryId}', ${index})">Remove</button>
+                        `;
+                        sourcesList.appendChild(item);
+                    });
+                }
+            });
+        }
+
+        // Remove news source
+        function removeSource(categoryId, index) {
+            if (newsSources[categoryId]) {
+                newsSources[categoryId].splice(index, 1);
+                if (newsSources[categoryId].length === 0) {
+                    delete newsSources[categoryId];
+                }
+                saveConfiguration();
+                loadSourcesList();
+            }
+        }
+
+        // Refresh stories with visual feedback and live RSS fetching
+        async function refreshStories(silent = false) {
+            const refreshBtn = document.querySelector('.control-btn:last-child');
+            
+            if (!silent && refreshBtn) {
+                const originalText = refreshBtn.innerHTML;
+                
+                // Show loading state
+                refreshBtn.classList.add('loading');
+                refreshBtn.innerHTML = '<span class="refresh-indicator">🔄</span> Fetching RSS feeds...';
+                refreshBtn.disabled = true;
+            }
+            
+            try {
+                // Fetch real RSS feeds
+                const newStories = await fetchAndCategorizeStories();
+                
+                // Update sample stories with live content
+                Object.keys(sampleStories).forEach(key => {
+                    sampleStories[key] = [];
+                });
+                
+                Object.entries(newStories).forEach(([category, stories]) => {
+                    sampleStories[category] = stories;
+                });
+                
+                // Cache the stories
+                cacheStories(newStories);
+                
+                // Refresh current view
+                if (currentCategory) {
+                    loadStories(currentCategory);
+                }
+                updateStoryCounts();
+                renderCategories();
+                
+                if (!silent && refreshBtn) {
+                    // Show completion state briefly
+                    refreshBtn.innerHTML = '✅ Live feeds updated!';
+                    refreshBtn.classList.remove('loading');
+                    
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        refreshBtn.innerHTML = originalText;
+                        refreshBtn.disabled = false;
+                    }, 2000);
+                }
+                
+                // Show success notification
+                const timestamp = new Date().toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                const totalStories = Object.values(newStories).reduce((sum, stories) => sum + stories.length, 0);
+                
+                if (!silent) {
+                    showUpdateNotification(`📡 ${totalStories} live stories from RSS feeds at ${timestamp}`);
+                } else {
+                    console.log(`Silent refresh: ${totalStories} stories updated at ${timestamp}`);
+                }
+                
+            } catch (error) {
+                console.error('RSS refresh failed:', error);
+                
+                if (!silent && refreshBtn) {
+                    // Show error state
+                    refreshBtn.innerHTML = '❌ RSS fetch failed';
+                    refreshBtn.classList.remove('loading');
+                    
+                    setTimeout(() => {
+                        refreshBtn.innerHTML = originalText;
+                        refreshBtn.disabled = false;
+                    }, 2000);
+                    
+                    showUpdateNotification('RSS feeds temporarily unavailable - showing cached content');
+                }
+            }
+        }
+
+        // Drag and drop functionality
+        let draggedElement = null;
+
+        // Update preferences
+        function updateStoriesPerCategory(value) {
+            userPreferences.storiesPerCategory = parseInt(value);
+            document.getElementById('storiesPerCategoryValue').textContent = value;
+            saveConfiguration();
+        }
+
+        function updateStoriesPerFeed(value) {
+            userPreferences.storiesPerFeed = parseInt(value);
+            document.getElementById('storiesPerFeedValue').textContent = value;
+            saveConfiguration();
+        }
+
+        function updateAutoRefresh(value) {
+            userPreferences.autoRefreshMinutes = parseInt(value);
+            document.getElementById('autoRefreshValue').textContent = `${value} minutes`;
+            saveConfiguration();
+            
+            // Restart auto-refresh with new interval
+            setupAutoRefresh();
+        }
+
+        function updateBackgroundOpacity(value) {
+            userPreferences.backgroundOpacity = parseInt(value) / 100;
+            document.getElementById('backgroundOpacityValue').textContent = `${value}%`;
+            saveConfiguration();
+            applyBackground();
+        }
+
+        function updateCardOpacity(value) {
+            userPreferences.cardOpacity = parseInt(value) / 100;
+            document.getElementById('cardOpacityValue').textContent = `${value}%`;
+            saveConfiguration();
+            applyCardOpacity();
+        }
+
+        function updateDashboardTitle(value) {
+            userPreferences.dashboardTitle = value || 'Morning News Dashboard';
+            saveConfiguration();
+            applyDashboardTitle();
+        }
+
+        function updatePreferenceSliders() {
+            const storiesPerCategorySlider = document.getElementById('storiesPerCategory');
+            const storiesPerFeedSlider = document.getElementById('storiesPerFeed');
+            const autoRefreshSlider = document.getElementById('autoRefreshMinutes');
+            const backgroundOpacitySlider = document.getElementById('backgroundOpacity');
+            const cardOpacitySlider = document.getElementById('cardOpacity');
+            const dashboardTitleInput = document.getElementById('dashboardTitleInput');
+            
+            if (storiesPerCategorySlider) {
+                storiesPerCategorySlider.value = userPreferences.storiesPerCategory;
+                document.getElementById('storiesPerCategoryValue').textContent = userPreferences.storiesPerCategory;
+            }
+            
+            if (storiesPerFeedSlider) {
+                storiesPerFeedSlider.value = userPreferences.storiesPerFeed;
+                document.getElementById('storiesPerFeedValue').textContent = userPreferences.storiesPerFeed;
+            }
+            
+            if (autoRefreshSlider) {
+                autoRefreshSlider.value = userPreferences.autoRefreshMinutes;
+                document.getElementById('autoRefreshValue').textContent = `${userPreferences.autoRefreshMinutes} minutes`;
+            }
+            
+            if (backgroundOpacitySlider) {
+                const opacityPercent = Math.round(userPreferences.backgroundOpacity * 100);
+                backgroundOpacitySlider.value = opacityPercent;
+                document.getElementById('backgroundOpacityValue').textContent = `${opacityPercent}%`;
+            }
+            
+            if (cardOpacitySlider) {
+                const cardOpacityPercent = Math.round(userPreferences.cardOpacity * 100);
+                cardOpacitySlider.value = cardOpacityPercent;
+                document.getElementById('cardOpacityValue').textContent = `${cardOpacityPercent}%`;
+            }
+            
+            if (dashboardTitleInput) {
+                dashboardTitleInput.value = userPreferences.dashboardTitle;
+            }
+        }
+
+        // Apply dashboard title
+        function applyDashboardTitle() {
+            const titleElement = document.getElementById('dashboardTitle');
+            if (titleElement) {
+                titleElement.textContent = userPreferences.dashboardTitle || 'Morning News Dashboard';
+            }
+        }
+
+        // Handle background image upload
+        function handleBackgroundImage(input) {
+            const file = input.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    userPreferences.backgroundImage = e.target.result;
+                    saveConfiguration();
+                    applyBackground();
+                    showUpdateNotification('Background image updated!');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Clear background image
+        function clearBackgroundImage() {
+            userPreferences.backgroundImage = '';
+            saveConfiguration();
+            applyBackground();
+            showUpdateNotification('Background image cleared');
+        }
+
+        // Apply background to body
+        function applyBackground() {
+            const body = document.body;
+            
+            if (userPreferences.backgroundImage) {
+                body.style.backgroundImage = `linear-gradient(rgba(102, 126, 234, ${userPreferences.backgroundOpacity}), rgba(118, 75, 162, ${userPreferences.backgroundOpacity})), url(${userPreferences.backgroundImage})`;
+                body.style.backgroundSize = 'cover';
+                body.style.backgroundPosition = 'center';
+                body.style.backgroundAttachment = 'fixed';
+            } else {
+                // Default gradient
+                body.style.backgroundImage = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                body.style.backgroundSize = '';
+                body.style.backgroundPosition = '';
+                body.style.backgroundAttachment = '';
+            }
+        }
+
+        // Apply card opacity to all glass elements
+        function applyCardOpacity() {
+            const opacity = userPreferences.cardOpacity;
+            const hoverOpacity = Math.min(opacity + 0.1, 0.5); // Slightly more opaque on hover
+            const borderOpacity = Math.min(opacity + 0.1, 0.4);
+            
+            // Create or update style element
+            let styleEl = document.getElementById('dynamic-card-opacity');
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = 'dynamic-card-opacity';
+                document.head.appendChild(styleEl);
+            }
+            
+            styleEl.textContent = `
+                .category-card {
+                    background: rgba(255, 255, 255, ${opacity}) !important;
+                    border-color: rgba(255, 255, 255, ${borderOpacity}) !important;
+                }
+                .category-card:hover,
+                .category-card.dragging,
+                .category-card.drag-over {
+                    background: rgba(255, 255, 255, ${hoverOpacity}) !important;
+                }
+                .story-card {
+                    background: rgba(255, 255, 255, ${opacity}) !important;
+                    border-color: rgba(255, 255, 255, ${borderOpacity}) !important;
+                }
+                .story-card:hover {
+                    background: rgba(255, 255, 255, ${hoverOpacity}) !important;
+                }
+                .category-header {
+                    background: rgba(255, 255, 255, ${opacity}) !important;
+                    border-color: rgba(255, 255, 255, ${borderOpacity}) !important;
+                }
+                .settings-panel {
+                    background: rgba(255, 255, 255, ${opacity}) !important;
+                    border-color: rgba(255, 255, 255, ${borderOpacity}) !important;
+                }
+                .control-btn {
+                    background: rgba(255, 255, 255, ${opacity}) !important;
+                    border-color: rgba(255, 255, 255, ${borderOpacity}) !important;
+                }
+                .control-btn:hover {
+                    background: rgba(255, 255, 255, ${hoverOpacity}) !important;
+                }
+                .story-source,
+                .story-tag,
+                .category-card .story-count {
+                    background: rgba(255, 255, 255, ${opacity * 0.75}) !important;
+                    border-color: rgba(255, 255, 255, ${borderOpacity * 0.8}) !important;
+                }
+            `;
+        }
+
+        // Setup auto-refresh timer
+        function setupAutoRefresh() {
+            // Clear existing timer
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+            }
+            
+            // Set new timer
+            const intervalMs = userPreferences.autoRefreshMinutes * 60 * 1000;
+            autoRefreshTimer = setInterval(() => {
+                console.log('Auto-refresh triggered');
+                refreshStories(true); // Silent refresh
+            }, intervalMs);
+            
+            console.log(`Auto-refresh set to ${userPreferences.autoRefreshMinutes} minutes`);
+        }
+
+        // Load cached stories from localStorage
+        function loadCachedStories() {
+            const cached = localStorage.getItem('cachedStories');
+            const cacheTimestamp = localStorage.getItem('cacheTimestamp');
+            
+            if (cached) {
+                const stories = JSON.parse(cached);
+                Object.keys(sampleStories).forEach(key => {
+                    sampleStories[key] = [];
+                });
+                Object.entries(stories).forEach(([category, storyList]) => {
+                    sampleStories[category] = storyList;
+                });
+                
+                const cacheDate = cacheTimestamp ? new Date(parseInt(cacheTimestamp)) : null;
+                if (cacheDate) {
+                    const timeSince = Math.floor((Date.now() - cacheDate.getTime()) / 60000);
+                    console.log(`Loaded cached stories from ${timeSince} minutes ago`);
+                }
+            }
+        }
+
+        // Save stories to cache
+        function cacheStories(stories) {
+            localStorage.setItem('cachedStories', JSON.stringify(stories));
+            localStorage.setItem('cacheTimestamp', Date.now().toString());
+            console.log('Stories cached to localStorage');
+        }
+
+        // Recommended high-quality news sources
+        const recommendedSources = {
+            breaking: [
+                { name: 'Reuters Breaking', url: 'https://feeds.reuters.com/reuters/breakingNews' },
+                { name: 'AP Breaking News', url: 'https://feeds.feedburner.com/ap-breaking-news' },
+                { name: 'BBC Breaking News', url: 'http://feeds.bbci.co.uk/news/rss.xml' }
+            ],
+            uspolitics: [
+                { name: 'Reuters Politics', url: 'https://feeds.reuters.com/reuters/politicsNews' },
+                { name: 'AP Politics', url: 'https://feeds.feedburner.com/ap-politics' },
+                { name: 'NPR Politics', url: 'https://feeds.npr.org/1014/rss.xml' },
+                { name: 'PBS NewsHour Politics', url: 'https://www.pbs.org/newshour/feeds/rss/politics' }
+            ],
+            worldpolitics: [
+                { name: 'Reuters World', url: 'https://feeds.reuters.com/Reuters/worldNews' },
+                { name: 'BBC World', url: 'http://feeds.bbci.co.uk/news/world/rss.xml' },
+                { name: 'AP International', url: 'https://feeds.feedburner.com/ap-international' },
+                { name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml' }
+            ],
+            financial: [
+                { name: 'Reuters Business', url: 'https://feeds.reuters.com/reuters/businessNews' },
+                { name: 'MarketWatch', url: 'http://feeds.marketwatch.com/marketwatch/topstories/' },
+                { name: 'Yahoo Finance', url: 'https://feeds.finance.yahoo.com/rss/2.0/headline' }
+            ],
+            cybersecurity: [
+                { name: 'Krebs on Security', url: 'https://krebsonsecurity.com/feed/' },
+                { name: 'Dark Reading', url: 'https://www.darkreading.com/rss.xml' },
+                { name: 'SecurityWeek', url: 'https://www.securityweek.com/feed' },
+                { name: 'The Hacker News', url: 'https://feeds.feedburner.com/TheHackersNews' }
+            ],
+            cryptocurrency: [
+                { name: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/' },
+                { name: 'The Block', url: 'https://www.theblockcrypto.com/rss.xml' },
+                { name: 'Decrypt', url: 'https://decrypt.co/feed' }
+            ],
+            ai: [
+                { name: 'MIT Technology Review AI', url: 'https://www.technologyreview.com/feed/' },
+                { name: 'VentureBeat AI', url: 'https://venturebeat.com/ai/feed/' },
+                { name: 'AI News', url: 'https://www.artificialintelligence-news.com/feed/' }
+            ],
+            positive: [
+                { name: 'Good News Network', url: 'https://www.goodnewsnetwork.org/feed/' },
+                { name: 'Positive News', url: 'https://www.positive.news/feed/' },
+                { name: 'Some Good News', url: 'https://somegoodnews.com/feed/' }
+            ]
+        };
+
+        // Add all recommended sources
+        function addRecommendedSources() {
+            const statusDiv = document.getElementById('quickSetupStatus');
+            statusDiv.innerHTML = '<div style="color: #667eea;">Adding sources...</div>';
+            
+            let totalAdded = 0;
+            let totalSources = 0;
+            
+            // Count total sources
+            Object.values(recommendedSources).forEach(sources => {
+                totalSources += sources.length;
+            });
+            
+            // Add sources for each category
+            Object.entries(recommendedSources).forEach(([categoryId, sources]) => {
+                if (categories[categoryId]) {
+                    if (!newsSources[categoryId]) {
+                        newsSources[categoryId] = [];
+                    }
+                    
+                    sources.forEach(source => {
+                        // Check if source already exists
+                        const exists = newsSources[categoryId].some(existing => 
+                            existing.name === source.name || existing.url === source.url
+                        );
+                        
+                        if (!exists) {
+                            newsSources[categoryId].push(source);
+                            totalAdded++;
+                        }
+                    });
+                }
+            });
+            
+            saveConfiguration();
+            loadSourcesList();
+            
+            // Show success message
+            statusDiv.innerHTML = `
+                <div style="color: #28a745; font-weight: 600;">
+                    ✅ Success! Added ${totalAdded} high-quality news sources across all categories.
+                </div>
+                <div style="color: #666; font-size: 0.9rem; margin-top: 5px;">
+                    Sources include Reuters, AP, BBC, NPR, Al Jazeera, and other trusted outlets.
+                </div>
+            `;
+            
+            // Clear status after 5 seconds
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+            
+            showUpdateNotification(`Added ${totalAdded} premium news sources!`);
+        }
+        function categorizeStory(story) {
+            let bestCategory = null;
+            let bestScore = 0;
+            
+            // Check each category's rules
+            Object.entries(categorizationRules).forEach(([categoryId, rules]) => {
+                let score = 0;
+                
+                // Source-based scoring (highest weight)
+                if (rules.sources.some(source => 
+                    story.source.toLowerCase().includes(source.toLowerCase()) ||
+                    source.toLowerCase().includes(story.source.toLowerCase())
+                )) {
+                    score += 100; // Very high weight for source match
+                }
+                
+                // Keyword-based scoring in title (high weight)
+                const titleLower = story.title.toLowerCase();
+                const titleMatches = rules.keywords.filter(keyword => 
+                    titleLower.includes(keyword.toLowerCase())
+                ).length;
+                score += titleMatches * 20;
+                
+                // Keyword-based scoring in excerpt (medium weight)
+                if (story.excerpt) {
+                    const excerptLower = story.excerpt.toLowerCase();
+                    const excerptMatches = rules.keywords.filter(keyword => 
+                        excerptLower.includes(keyword.toLowerCase())
+                    ).length;
+                    score += excerptMatches * 10;
+                }
+                
+                // Priority tie-breaker (lower number = higher priority)
+                score += (10 - rules.priority);
+                
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestCategory = categoryId;
+                }
+            });
+            
+            return bestCategory || 'breaking'; // Default to breaking news if no match
+        }
+
+        // Fetch stories from actual RSS feeds
+        async function fetchAndCategorizeStories() {
+            console.log('Starting RSS fetch from configured sources...');
+            
+            const allStories = [];
+            const fetchPromises = [];
+            
+            // Collect all RSS URLs from configured sources
+            Object.entries(newsSources).forEach(([categoryId, sources]) => {
+                sources.forEach(source => {
+                    const fetchPromise = fetchRSSFeed(source.url, source.name, categoryId);
+                    fetchPromises.push(fetchPromise);
+                });
+            });
+            
+            try {
+                // Fetch all RSS feeds concurrently
+                const results = await Promise.allSettled(fetchPromises);
+                
+                results.forEach((result, index) => {
+                    if (result.status === 'fulfilled' && result.value) {
+                        allStories.push(...result.value);
+                    } else {
+                        console.warn('RSS fetch failed:', result.reason);
+                    }
+                });
+                
+                console.log(`Fetched ${allStories.length} total stories from RSS feeds`);
+                
+                // If no stories fetched, return fallback sample data
+                if (allStories.length === 0) {
+                    console.log('No RSS stories available, using sample data');
+                    return getFallbackSampleStories();
+                }
+                
+                // Categorize all fetched stories
+                const categorizedStories = {};
+                
+                allStories.forEach(story => {
+                    // First try the source-suggested category, then smart categorization
+                    let category = story.sourceCategory || categorizeStory(story);
+                    
+                    if (!categorizedStories[category]) {
+                        categorizedStories[category] = [];
+                    }
+                    
+                    // Add auto-generated tags based on matching keywords
+                    const rules = categorizationRules[category];
+                    const tags = [];
+                    
+                    if (rules) {
+                        const allText = `${story.title} ${story.excerpt || ''}`.toLowerCase();
+                        rules.keywords.forEach(keyword => {
+                            if (allText.includes(keyword.toLowerCase())) {
+                                tags.push(keyword.charAt(0).toUpperCase() + keyword.slice(1));
+                            }
+                        });
+                    }
+                    
+                    story.tags = [...new Set(tags)].slice(0, 3); // Remove duplicates, limit to 3
+                    categorizedStories[category].push(story);
+                });
+                
+                // Sort stories by time (newest first) within each category
+                Object.keys(categorizedStories).forEach(category => {
+                    categorizedStories[category].sort((a, b) => {
+                        return new Date(b.pubDate || 0) - new Date(a.pubDate || 0);
+                    });
+                    // Limit to user preference for stories per category
+                    categorizedStories[category] = categorizedStories[category].slice(0, userPreferences.storiesPerCategory);
+                });
+                
+                return categorizedStories;
+                
+            } catch (error) {
+                console.error('Error fetching RSS feeds:', error);
+                return getFallbackSampleStories();
+            }
+        }
+
+        // Fetch individual RSS feed with fallback methods
+        async function fetchRSSFeed(rssUrl, sourceName, suggestedCategory) {
+            try {
+                console.log(`Fetching RSS: ${sourceName} from ${rssUrl}`);
+                
+                // Method 1: Try RSS2JSON (free tier, no API key needed)
+                try {
+                    const encodedUrl = encodeURIComponent(rssUrl);
+                    const rss2jsonUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodedUrl}&count=${userPreferences.storiesPerFeed}`;
+                    
+                    const response = await fetch(rss2jsonUrl);
+                    const data = await response.json();
+                    
+                    if (data.status === 'ok' && data.items && data.items.length > 0) {
+                        console.log(`✅ RSS2JSON success for ${sourceName}: ${data.items.length} items`);
+                        return parseRSS2JSONItems(data.items, sourceName, suggestedCategory);
+                    } else {
+                        throw new Error(`RSS2JSON failed: ${data.message || 'No items returned'}`);
+                    }
+                } catch (rss2jsonError) {
+                    console.log(`RSS2JSON failed for ${sourceName}, trying AllOrigins...`);
+                    
+                    // Method 2: Try AllOrigins as backup
+                    const allOriginsUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
+                    
+                    const response = await fetch(allOriginsUrl);
+                    const data = await response.json();
+                    
+                    if (data.contents) {
+                        console.log(`✅ AllOrigins success for ${sourceName}`);
+                        return parseRSSXML(data.contents, sourceName, suggestedCategory);
+                    } else {
+                        throw new Error('AllOrigins returned no content');
+                    }
+                }
+                
+            } catch (error) {
+                console.warn(`❌ All methods failed for ${sourceName}:`, error.message);
+                
+                // Return mock data for this source to keep interface working
+                return generateMockStories(sourceName, suggestedCategory);
+            }
+        }
+
+        // Parse RSS2JSON format
+        function parseRSS2JSONItems(items, sourceName, suggestedCategory) {
+            return items.map(item => {
+                const pubDate = new Date(item.pubDate);
+                const timeAgo = getTimeAgo(pubDate);
+                
+                return {
+                    title: item.title || 'No title',
+                    excerpt: item.description ? 
+                        item.description.replace(/<[^>]*>/g, '').substring(0, 150) + '...' : 
+                        'No excerpt available',
+                    source: sourceName,
+                    time: timeAgo,
+                    url: item.link || '#',
+                    pubDate: pubDate,
+                    sourceCategory: suggestedCategory,
+                    tags: []
+                };
+            });
+        }
+
+        // Parse raw RSS XML from AllOrigins
+        function parseRSSXML(xmlString, sourceName, suggestedCategory) {
+            try {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
+                
+                // Check for parsing errors
+                if (xmlDoc.querySelector('parsererror')) {
+                    throw new Error('XML parsing failed');
+                }
+                
+                const items = xmlDoc.querySelectorAll('item, entry'); // Support both RSS and Atom
+                const stories = [];
+                
+                for (let i = 0; i < Math.min(items.length, userPreferences.storiesPerFeed); i++) {
+                    const item = items[i];
+                    
+                    const title = item.querySelector('title')?.textContent || 'No title';
+                    const description = item.querySelector('description, summary, content')?.textContent || '';
+                    const link = item.querySelector('link')?.textContent || 
+                                item.querySelector('link')?.getAttribute('href') || '#';
+                    const pubDateText = item.querySelector('pubDate, published, updated')?.textContent || '';
+                    
+                    const pubDate = pubDateText ? new Date(pubDateText) : new Date();
+                    const timeAgo = getTimeAgo(pubDate);
+                    
+                    stories.push({
+                        title: title.substring(0, 200), // Limit title length
+                        excerpt: description.replace(/<[^>]*>/g, '').substring(0, 150) + '...',
+                        source: sourceName,
+                        time: timeAgo,
+                        url: link,
+                        pubDate: pubDate,
+                        sourceCategory: suggestedCategory,
+                        tags: []
+                    });
+                }
+                
+                return stories;
+                
+            } catch (error) {
+                console.error(`XML parsing failed for ${sourceName}:`, error);
+                return generateMockStories(sourceName, suggestedCategory);
+            }
+        }
+
+        // Generate mock stories when RSS fails
+        function generateMockStories(sourceName, suggestedCategory) {
+            const mockTitles = {
+                breaking: [`Breaking: ${sourceName} reports major development`, `Urgent update from ${sourceName}`],
+                uspolitics: [`${sourceName}: Congressional update on key legislation`, `Political analysis from ${sourceName}`],
+                worldpolitics: [`${sourceName}: International diplomatic developments`, `Global affairs update from ${sourceName}`],
+                financial: [`${sourceName}: Market analysis and economic outlook`, `Financial update from ${sourceName}`],
+                cybersecurity: [`${sourceName}: New security threat identified`, `Cybersecurity alert from ${sourceName}`],
+                cryptocurrency: [`${sourceName}: Crypto market movements`, `Digital asset update from ${sourceName}`],
+                ai: [`${sourceName}: AI breakthrough announced`, `Technology advancement from ${sourceName}`],
+                positive: [`${sourceName}: Inspiring community story`, `Heartwarming update from ${sourceName}`]
+            };
+            
+            const titles = mockTitles[suggestedCategory] || [`Update from ${sourceName}`, `News from ${sourceName}`];
+            
+            return titles.map((title, index) => ({
+                title: title,
+                excerpt: `This is a placeholder story while we work on connecting to ${sourceName}'s RSS feed. Real stories will appear once the connection is established.`,
+                source: sourceName,
+                time: `${index + 1} hour${index > 0 ? 's' : ''} ago`,
+                url: '#',
+                pubDate: new Date(Date.now() - (index + 1) * 3600000),
+                sourceCategory: suggestedCategory,
+                tags: ['Placeholder']
+            }));
+        }
+
+        // Calculate relative time
+        function getTimeAgo(pubDate) {
+            const now = new Date();
+            const diffMinutes = Math.floor((now - pubDate) / (1000 * 60));
+            
+            if (diffMinutes < 1) return 'Just now';
+            if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+            
+            const diffHours = Math.floor(diffMinutes / 60);
+            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+            
+            const diffDays = Math.floor(diffHours / 24);
+            return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        }
+
+        // Fallback sample stories when RSS feeds fail
+        function getFallbackSampleStories() {
+            return {
+                breaking: [
+                    {
+                        title: "Major Economic Policy Announced",
+                        excerpt: "Government unveils new economic stimulus package targeting inflation concerns...",
+                        source: "Reuters",
+                        time: "2 hours ago",
+                        url: "https://reuters.com/sample1",
+                        tags: ["Economy", "Policy"]
+                    }
+                ],
+                cybersecurity: [
+                    {
+                        title: "New Ransomware Strain Detected",
+                        excerpt: "Security researchers discover sophisticated malware campaign...",
+                        source: "Krebs on Security",
+                        time: "1 hour ago",
+                        url: "https://krebsonsecurity.com/sample1",
+                        tags: ["Ransomware", "Malware"]
+                    }
+                ]
+            };
+        }
+
+        function handleDragStart(e) {
+            draggedElement = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.outerHTML);
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            
+            // Clean up all drag-over classes
+            document.querySelectorAll('.category-card').forEach(card => {
+                card.classList.remove('drag-over');
+            });
+            
+            draggedElement = null;
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragEnter(e) {
+            if (this !== draggedElement) {
+                this.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+            
+            if (draggedElement !== this) {
+                const draggedId = draggedElement.dataset.categoryId;
+                const targetId = this.dataset.categoryId;
+                
+                // Find positions in current order
+                const draggedIndex = categoryOrder.indexOf(draggedId);
+                const targetIndex = categoryOrder.indexOf(targetId);
+                
+                // Remove dragged item and insert at new position
+                categoryOrder.splice(draggedIndex, 1);
+                categoryOrder.splice(targetIndex, 0, draggedId);
+                
+                // Save new order and re-render
+                saveConfiguration();
+                renderCategories();
+                
+                // Show success feedback
+                showUpdateNotification(`Moved ${categories[draggedId].name} to new position`);
+            }
+            
+            this.classList.remove('drag-over');
+            return false;
+        }
+
+        // Initialize app
+        init();
+    </script>
+</body>
+</html>
